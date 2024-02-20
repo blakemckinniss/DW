@@ -1,5 +1,3 @@
-
-
 const createEquipment = (dungeon, player) => {
     let equipment = {
         category: null,

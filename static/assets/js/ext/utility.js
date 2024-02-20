@@ -360,6 +360,15 @@ function showExportImport() {
     }
 }
 
+// Utility function to format numbers, assuming nFormatter is defined elsewhere
+// const nFormatter = (num) => { /* Implementation here */ };
+
+// Utility function to simplify percentage formatting
+const formatPercent = (value) => {
+    let rx = /\.0+$|(\.[0-9]*[1-9])0+$/;
+    return value.toFixed(2).replace(rx, "$1");
+};
+
 /**
  * Binds a property of an object to the innerHTML of an HTML element,
  * updating the element whenever the property changes.

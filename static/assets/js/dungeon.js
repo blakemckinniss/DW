@@ -1,10 +1,9 @@
-// ===== Dungeon Setup =====
-// Enables start and pause on button click
+
+
 dungeonActivity.addEventListener('click', function () {
     dungeonStartPause();
 });
 
-// Sets up the initial dungeon
 const initialDungeonLoad = () => {
     if (localStorage.getItem("dungeonData") !== null) {
         dungeon = JSON.parse(localStorage.getItem("dungeonData"));
@@ -37,7 +36,6 @@ const dungeonStartPause = () => {
     updateDungeonUI(!paused);
 };
 
-// Counts the total time for the current run and total playtime
 const dungeonCounter = () => {
     player.playtime++;
     dungeon.statistics.runtime++;
@@ -45,7 +43,7 @@ const dungeonCounter = () => {
     saveData();
 }
 
-// Loads the floor and room count
+
 const loadDungeonProgress = () => {
     if (dungeon.progress.room > dungeon.progress.roomLimit) {
         dungeon.progress.room = 1;
@@ -56,42 +54,42 @@ const loadDungeonProgress = () => {
 }
 
 const disarmTrap = (trapType) => {
-    let successChance = Math.random() < 0.5; // Simplified success chance calculation
+    let successChance = Math.random() < 0.5; 
     if (successChance) {
         logDungeonEvent(`You successfully disarmed the ${trapType}.`);
     } else {
         logDungeonEvent(`You failed to disarm the ${trapType} and took damage.`);
-        playerTakeDamage(); // Implement damage to the player
+        playerTakeDamage(); 
     }
     dungeon.status.event = false;
 };
 
 const evadeTrap = (trapType) => {
-    let successChance = Math.random() < 0.7; // Simplified success chance calculation
+    let successChance = Math.random() < 0.7; 
     if (successChance) {
         logDungeonEvent(`You successfully evaded the ${trapType}.`);
     } else {
         logDungeonEvent(`You failed to evade the ${trapType} and took damage.`);
-        playerTakeDamage(); // Implement damage to the player
+        playerTakeDamage(); 
     }
     dungeon.status.event = false;
 };
 
 const playerTakeDamage = () => {
-    const damage = calculateTrapDamage(); // Implement trap damage calculation
+    const damage = calculateTrapDamage(); 
     player.stats.hp -= damage;
     if (player.stats.hp <= 0) {
-        // Handle player death
+        
     }
-    playerLoadStats(); // Refresh player stats display
+    playerLoadStats(); 
 };
 
 function getBonusIcon(stat) {
     return iconMap[stat] || "ra ra-question";
 }
 
-// ========= Dungeon Choice Events ==========
-// Starts the battle
+
+
 const engageBattle = () => {
     showCombatInfo()
     startCombat(bgmBattleMain);
@@ -100,7 +98,7 @@ const engageBattle = () => {
     updateDungeonLog();
 }
 
-// Mimic encounter
+
 const mimicBattle = (type) => {
     generateRandomEnemy(type);
     showCombatInfo()
@@ -110,7 +108,7 @@ const mimicBattle = (type) => {
     addDungeonLog(`You encountered ${enemy.name}.`);
 }
 
-// Guardian boss fight
+
 const guardianBattle = () => {
     incrementRoom();
     generateRandomEnemy("guardian");
@@ -121,7 +119,7 @@ const guardianBattle = () => {
     addDungeonLog("You moved to the next floor.");
 }
 
-// Guardian boss fight
+
 const specialBossBattle = () => {
     generateRandomEnemy("sboss");
     showCombatInfo()
@@ -131,7 +129,7 @@ const specialBossBattle = () => {
     addDungeonLog(`Dungeon Monarch ${enemy.name} has awoken.`);
 }
 
-// Flee from the monster
+
 const fleeBattle = () => {
     let eventRoll = randomizeNum(1, 2);
     if (eventRoll == 1) {
@@ -148,7 +146,7 @@ const fleeBattle = () => {
     }
 }
 
-// Chest event randomizer
+
 const chestEvent = () => {
     sfxConfirm.play();
     let eventRoll = randomizeNum(1, 4);
@@ -169,7 +167,7 @@ const chestEvent = () => {
     }
 }
 
-// Calculates Gold Drop
+
 const goldDrop = () => {
     sfxSell.play();
     let goldValue = randomizeNum(50, 500) * dungeon.progress.floor;
@@ -178,20 +176,17 @@ const goldDrop = () => {
     playerLoadStats();
 }
 
-// Non choices dungeon event messages
 const nothingEvent = () => {
-    let eventRoll = randomizeNum(1, 5);
-    if (eventRoll == 1) {
-        addDungeonLog("You explored and found nothing.");
-    } else if (eventRoll == 2) {
-        addDungeonLog("You found an empty chest.");
-    } else if (eventRoll == 3) {
-        addDungeonLog("You found a monster corpse.");
-    } else if (eventRoll == 4) {
-        addDungeonLog("You found a corpse.");
-    } else if (eventRoll == 5) {
-        addDungeonLog("There is nothing in this area.");
-    }
+    const events = [
+        "You explored and found nothing.",
+        "You found an empty chest.",
+        "You found a monster corpse.",
+        "You found a corpse.",
+        "There is nothing in this area."
+    ];
+
+    let eventRoll = randomizeNum(1, 5) - 1; 
+    addDungeonLog(events[eventRoll]);
 }
 
 const statBlessing = () => {
@@ -205,22 +200,28 @@ const statBlessing = () => {
         critRate: 1,
         critDmg: 6
     };
+    
     const stats = Object.keys(statValues);
-    const buff = stats[Math.floor(Math.random() * stats.length)];
-    const value = statValues[buff];
+    const randomStat = stats[Math.floor(Math.random() * stats.length)];
+    const value = statValues[randomStat];
 
-    player.bonusStats[buff] += value;
-
-    // Format buff name for display
-    const formattedBuffName = buff.replace(/([A-Z])/g, " $1").replace("crit", "Crit").toLowerCase();
+    player.bonusStats[randomStat] += value;
+    
+    const formatBuffName = (buff) => {
+        return buff
+            .replace(/([A-Z])/g, " $1") 
+            .replace(/^./, (str) => str.toUpperCase()) 
+            .replace("Crit ", "Crit"); 
+    };
+    
+    const formattedBuffName = formatBuffName(randomStat);
     addDungeonLog(`You gained ${value}% bonus ${formattedBuffName} from the blessing. (Blessing Lv.${player.blessing} > Blessing Lv.${player.blessing + 1})`);
-
+    
     blessingUp();
     playerLoadStats();
     saveData();
 }
 
-// Cursed totem offering
 const cursedTotem = (curseLvl) => {
     sfxBuff.play();
     dungeon.settings.enemyScaling += 0.1;
@@ -228,13 +229,12 @@ const cursedTotem = (curseLvl) => {
     saveData();
 }
 
-// Ignore event and proceed exploring
+
 const ignoreEvent = () => {
     sfxConfirm.play();
     logDungeonEvent("You ignored it and decided to move on.");
 }
 
-// Ignore event and proceed exploring
 const logDungeonEvent = (logDungeonMessage) => {
     sfxConfirm.play();
     if (logDungeonMessage) {
@@ -243,20 +243,18 @@ const logDungeonEvent = (logDungeonMessage) => {
     toggleExploring(dungeon);
 }
 
-// Increase room or floor accordingly
+
 const incrementRoom = () => {
     dungeon.progress.room++;
     dungeon.action = 0;
     loadDungeonProgress();
 }
 
-// Increases player total blessing
 const blessingUp = () => {
     blessingValidation();
     player.blessing++;
 }
 
-// Validates whether blessing exists or not
 const blessingValidation = () => {
     if (player.blessing == undefined) {
         player.blessing = 1;
