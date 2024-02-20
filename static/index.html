@@ -2,7 +2,6 @@
 <html lang="en">
 
 <head>
-  <!-- Google tag (gtag.js) -->
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,17 +10,12 @@
   <link rel="stylesheet" href="./assets/css/rpg-awesome.min.css" />
   <link rel="stylesheet" href="./assets/css/style.css" />
   <link rel="icon" type="image/png" href="./assets/icon/favicon.ico" />
-  <script src="./assets/js/howler.min.js"></script>
+  <script src="./assets/js/ext/howler.min.js"></script>
   <title>DCD</title>
 </head>
 
 <body>
-
-
   <main>
-
-
-
     <!-- ===== Rooms ===== -->
     <!-- Title Screen -->
     <section id="title-screen" class="game-container">
@@ -31,7 +25,6 @@
       </div>
       <p>Tap</p>
     </section>
-
     <!-- Character Creation -->
     <section id="character-creation" class="game-container">
       <form id="name-submit">
@@ -42,17 +35,14 @@
         <button type="submit">Confirm</button>
       </form>
     </section>
-
     <!-- Hub -->
     <section id="dungeon-main" class="game-container scrollable">
-
       <section>
-        <div class="mercenaries-wrapper">
-          <!-- Container for Mercenaries' Avatars -->
-          <div id="mercenariesContainer" class="mercenaries-grid"></div>
+        <div class="vixens-wrapper">
+          <!-- Container for vixens' Avatars -->
+          <div id="vixensContainer" class="vixens-grid"></div>
         </div>
       </section>
-
       <section class="primary-bottom">
         <div class="dungeon-panel">
           <div class="logBox secondary-panel">
@@ -80,19 +70,18 @@
 
           <div class="logBox third-panel">
             <div class="dungeon-head">
-            <p id="player-name"></p>
-            <p id="player-exp"></p>
-            <p id="player-gold"></p>
-            <p>
-              <i class="ra ra-muscle-up"></i>
-              <span id="player-strength">0</span>
-            </p>
-            <p><i class="ra ra-clover"></i> <span id="player-luck">1</span></p>
-            <p>
-              <i class="ra ra-lightning-bolt"></i>
-              <span id="player-energy">100</span>
-            </p>
-
+              <p id="player-name"></p>
+              <p id="player-exp"></p>
+              <p id="player-gold"></p>
+              <p>
+                <i class="ra ra-muscle-up"></i>
+                <span id="player-strength">0</span>
+              </p>
+              <p><i class="ra ra-clover"></i> <span id="player-luck">1</span></p>
+              <p>
+                <i class="ra ra-lightning-bolt"></i>
+                <span id="player-energy">100</span>
+              </p>
             </div>
             <div class="stat-panel">
               <div class="box boxStat">
@@ -114,30 +103,17 @@
                   <i class="ra ra-dripping-blade"></i>
                   <span id="player-vamp"></span>
                 </p>
-                <!-- <p>
-                    <span id="player-empty"></span>
-                  </p> -->
-                <!-- <p>
-                    <i class="ra ra-lightning-bolt"></i>
-                    <span id="player-energy">100</span>
-                  </p> -->
                 <p>
                   <i class="ra ra-player-dodge"></i>
                   <span id="player-atkspd"></span>
                 </p>
-
-                <!-- <p>
-                  <i class="ra ra-clover"></i> <span id="player-luck">1</span>
-                </p> -->
               </div>
               <div class="box" id="bonus-stats"></div>
               <div id="buffBanePanel" class="box">
                 <div class="buffs-banes-panel">
                   <div class="buffs">
-                    <!-- Buffs will be dynamically added here -->
                   </div>
                   <div class="banes">
-                    <!-- Banes will be dynamically added here -->
                   </div>
                 </div>
               </div>
@@ -146,65 +122,62 @@
         </div>
         </div>
       </section>
- 
-    </section>
-       <!-- ===== Modals ===== -->
-       <div class="modal-container" id="inventory">
-        <div class="content">
-          <div class="content-head">
-            <h3>Inventory</h3>
-            <p onclick="closeInventory()"><i class="fa fa-xmark"></i></p>
-          </div>
-          <div class="content-head">
-            <button id="sell-all">Sell</button>
-            <select id="sell-rarity" title="Select Rarity">
-              <option class="Common" value="Common">Common</option>
-              <option class="Uncommon" value="Uncommon">Uncommon</option>
-              <option class="Rare" value="Rare">Rare</option>
-              <option class="Epic" value="Epic">Epic</option>
-              <option class="Legendary" value="Legendary">Legendary</option>
-              <option class="Heirloom" value="Heirloom">Heirloom</option>
-              <option class="Common" value="All">All</option>
-            </select>
-          </div>
-          <div class="inventorySlots" id="playerInventory"></div>
-          <div class="stat-panel">
-            <div class="box">
-              <div class="box-head">
-                <h4>Equipment</h4>
-                <p id="unequip-all"><i class="fa fa-circle-xmark"></i></p>
-              </div>
-              <div id="playerEquipment"></div>
-            </div>
-          </div>
-          <button id="menu-btn">Menu</button>
-        </div>
-      </div>
-      <div class="modal-container" id="equipmentInfo"></div>
-      <div class="modal-container" id="combatPanel"></div>
-      <div class="modal-container" id="lvlupPanel">
-        <div class="content" id="lvlupSelect"></div>
-      </div>
-      <div class="modal-container" id="defaultModal"></div>
-      <div class="modal-container" id="menuModal"></div>
-      <div class="modal-container" id="confirmationModal"></div>
-    
-      <div class="modal-container" id="materialModal">
-        <div class="content">
-          <div class="content-head">
-            <h4 id="modalMaterialName"></h4>
-            <p onclick="closeMaterial()"><i class="fa fa-xmark"></i></p>
-          </div>
-          <div id="materialActions"></div>
-        </div>
-      </div>
 
+    </section>
+    <!-- ===== Modals ===== -->
+    <div class="modal-container" id="inventory">
+      <div class="content">
+        <div class="content-head">
+          <h3>Inventory</h3>
+          <p onclick="closeInventory()"><i class="fa fa-xmark"></i></p>
+        </div>
+        <div class="content-head">
+          <button id="sell-all">Sell</button>
+          <select id="sell-rarity" title="Select Rarity">
+            <option class="Common" value="Common">Common</option>
+            <option class="Uncommon" value="Uncommon">Uncommon</option>
+            <option class="Rare" value="Rare">Rare</option>
+            <option class="Epic" value="Epic">Epic</option>
+            <option class="Legendary" value="Legendary">Legendary</option>
+            <option class="Heirloom" value="Heirloom">Heirloom</option>
+            <option class="Common" value="All">All</option>
+          </select>
+        </div>
+        <div class="inventorySlots" id="playerInventory"></div>
+        <div class="stat-panel">
+          <div class="box">
+            <div class="box-head">
+              <h4>Equipment</h4>
+              <p id="unequip-all"><i class="fa fa-circle-xmark"></i></p>
+            </div>
+            <div id="playerEquipment"></div>
+          </div>
+        </div>
+        <button id="menu-btn">Menu</button>
+      </div>
+    </div>
+    <div class="modal-container" id="equipmentInfo"></div>
+    <div class="modal-container" id="combatPanel"></div>
+    <div class="modal-container" id="lvlupPanel">
+      <div class="content" id="lvlupSelect"></div>
+    </div>
+    <div class="modal-container" id="defaultModal"></div>
+    <div class="modal-container" id="menuModal"></div>
+    <div class="modal-container" id="confirmationModal"></div>
+    <div class="modal-container" id="materialModal">
+      <div class="content">
+        <div class="content-head">
+          <h4 id="modalMaterialName"></h4>
+          <p onclick="closeMaterial()"><i class="fa fa-xmark"></i></p>
+        </div>
+        <div id="materialActions"></div>
+      </div>
+    </div>
   </main>
 
   <section>
-    <div class="mercenaries-wrapper">
-      <!-- Container for Mercenaries' Avatars -->
-      <div id="mercenariesContainer" class="mercenaries-grid"></div>
+    <div class="vixens-wrapper">
+      <div id="vixensContainer" class="vixens-grid"></div>
     </div>
   </section>
 
@@ -213,21 +186,23 @@
     <div class="loader"></div>
   </div>
 
-
   </main>
-  <script src="./assets/js/utility.js"></script>
-  <script src="./assets/js/elements.js"></script>
-  <script src="./assets/js/music.js"></script>
+  <script src="./assets/js/ext/keys.js"></script>
+  <script src="./assets/js/ext/utility.js"></script>
+  <script src="./assets/js/ext/elements.js"></script>
+  <script src="./assets/js/ext/music.js"></script>
+  <script src="./assets/js/ext/log.js"></script>
+  <script src="./assets/js/ext/tests.js"></script>
+  <script src="./assets/js/ext/messages.js"></script>
   <script src="./assets/js/player.js"></script>
   <script src="./assets/js/equipment.js"></script>
   <script src="./assets/js/combat.js"></script>
+  <script src="./assets/js/vixens.js"></script>
+  <script src="./assets/js/events.js"></script>
   <script src="./assets/js/dungeon.js"></script>
   <script src="./assets/js/enemy.js"></script>
   <script src="./assets/js/main.js"></script>
   <script src="./assets/js/materials.js"></script>
-  <script src="./assets/js/log.js"></script>
-
-  <script src="./assets/js/tests.js"></script>
 </body>
 
 </html>

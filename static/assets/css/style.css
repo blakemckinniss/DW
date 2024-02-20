@@ -33,7 +33,7 @@ p {
     padding: 10px;
 }
 
-.stats, .bonus-stats, .mercenaries {
+.stats, .bonus-stats, .vixens {
     flex: 1;
     margin: 5px;
 } */
@@ -78,12 +78,12 @@ p {
     color: red;
 }
 
-.mercenaries h3, .stats h3, .bonus-stats h3 {
+.vixens h3, .stats h3, .bonus-stats h3 {
     text-align: center;
 }
 
-/* Add specific styles for mercenaries */
-.mercenaries p {
+/* Add specific styles for vixens */
+.vixens p {
     color: #ddd; /* Adjust based on your design */
     margin: 5px 0;
 }
@@ -140,7 +140,7 @@ p {
 /* Default style for subjects without a defined rarity or if the rarity is unrecognized */
 .rarity { color: #FFFFFF; /* Fallback color, adjust as needed */ }
 
-.mercenaries-grid {
+.vixens-grid {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-around; /* Adjust based on layout needs */
@@ -149,7 +149,7 @@ p {
     margin: auto; /* Center the grid horizontally */
 }
 
-.mercenary-item {
+.vixen-item {
     margin-top: 15px;
     margin-bottom: 15px;
     aspect-ratio: 1 / 1;
@@ -166,22 +166,22 @@ p {
 .epic { color: purple; }
 .legendary { color: gold; }
 
-/* .mercenary-item {
+/* .vixen-item {
     flex-direction: column;
     align-items: center;
     text-align: center;
 } */
 
-.mercenary-name-top {
+.vixen-name-top {
     font-weight: bold; /* Example styling */
     margin-bottom: 5px; /* Space above the image */
 }
 
-.mercenary-bonus {
+.vixen-bonus {
     margin-top: 5px; /* Space below the image */
 }
 
-.mercenary-item img {
+.vixen-item img {
     margin-top: 0px;
     width: 70%; /* Makes image fill its container */
     height: auto; /* Maintains aspect ratio */
@@ -189,18 +189,18 @@ p {
 }
 
 @media (max-width: 768px) {
-    .mercenary-item {
+    .vixen-item {
         max-height: 150px; /* Adjust for smaller screens */
     }
 }
 
 @media (max-width: 480px) {
-    .mercenary-item {
+    .vixen-item {
         max-height: 100px; /* Further adjust for very small screens */
     }
 }
 
-.mercenary-name {
+.vixen-name {
     width: 100%; /* Ensure it spans the full width of its container */
     padding: 5px 0; /* Add some padding */
     box-sizing: border-box; /* Include padding in width calculation */
@@ -210,8 +210,8 @@ p {
     text-overflow: ellipsis; /* Add ellipsis for overflow text */
 }
 
-.mercenaries-wrapper {
-    align-self: flex-start; /* Aligns this wrapper (and thus .mercenaries-grid) to the top */
+.vixens-wrapper {
+    align-self: flex-start; /* Aligns this wrapper (and thus .vixens-grid) to the top */
     width: 100%; /* Take full width to maintain layout consistency */
     display:none;
 }
@@ -1164,4 +1164,9 @@ header button i {
     text-align: center;
     margin: 0.3rem 0;
     padding: 0.3rem;
+}
+
+.fade-out {
+    opacity: 0;
+    transition: opacity 2s ease-out; /* Adjust the timing and easing to suit your needs */
 }

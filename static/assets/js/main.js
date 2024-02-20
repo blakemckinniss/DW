@@ -100,7 +100,7 @@ window.addEventListener("load", function () {
         player.strength = 100; // Example starting strength value
         player.maxWeight = player.strength * 10; // Example formula to calculate max weight
         player.materials = [];
-        player.mercenaries = [];
+        player.vixens = [];
         player.buffs = [];
         player.banes = [];
         player.energy = 100; // Starting energy
@@ -403,7 +403,7 @@ const runLoad = (id, display) => {
     setTimeout(async () => {
         loader.style.display = "none";
         document.querySelector(`#${id}`).style.display = `${display}`;
-        document.querySelector(".mercenaries-wrapper").style.display = "flex";
+        document.querySelector(".vixens-wrapper").style.display = "flex";
     }, 1000);
 }
 
@@ -494,7 +494,7 @@ const progressReset = () => {
     player.luck = 1; // Default luck value
     player.strength = 100; // Example starting strength value
     player.materials = [];
-    player.mercenaries = [];
+    player.vixens = [];
     player.energy = 10; // Starting energy
     player.maxEnergy = 100; // Maximum energy
     player.energyCost = 1; // Energy cost per dungeon event

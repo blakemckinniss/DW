@@ -36,23 +36,23 @@ function extendTestBane() {
 
 
 function addTestRecruit() {
-    // Ensure the player's mercenaries array exists
-    if (!player.mercenaries) {
-        player.mercenaries = [];
+    // Ensure the player's vixens array exists
+    if (!player.vixens) {
+        player.vixens = [];
     }
 
-    // Define a test mercenary with a structured bonus
-    const testMercenary = {
+    // Define a test vixen with a structured bonus
+    const testvixen = {
         name: "Ragnar The Brave",
         bonus: { stat: "atk", value: 10 }, // 10% bonus to ATK
         rarity: "Epic"
     };
 
-    // Add the test mercenary to the player's mercenaries array
-    player.mercenaries.push(testMercenary);
+    // Add the test vixen to the player's vixens array
+    player.vixens.push(testvixen);
 
     // Log for debugging
-    console.log("Added test recruit: ", testMercenary);
+    console.log("Added test recruit: ", testvixen);
 
     // Apply the new recruit bonuses to the player's stats
     applyRecruitBonuses(); // This function will handle the updating of the player stats and UI

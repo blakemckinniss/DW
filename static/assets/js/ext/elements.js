@@ -13,3 +13,9 @@ const confirmationModalElement = document.querySelector('#confirmationModal');
 const sellAllElement = document.querySelector("#sell-all");
 const sellRarityElement = document.querySelector('#sell-rarity');
 const menuModalElement = document.querySelector('#menuModal');
+
+const dungeonActivity = document.querySelector("#dungeonActivity");
+const dungeonAction = document.querySelector("#dungeonAction");
+const dungeonTime = document.querySelector("#dungeonTime");
+const floorCount = document.querySelector("#floorCount");
+const roomCount = document.querySelector("#roomCount");

@@ -167,7 +167,7 @@ setInterval(() => {
 
 // Refresh the player stats
 const playerLoadStats = () => {
-    if (!player.mercenaries) player.mercenaries = [];
+    if (!player.vixens) player.vixens = [];
     if (!player.buffs) player.buffs = [];
     if (!player.banes) player.banes = [];
     if (!player.currentWeight) player.currentWeight = () => player.materials.reduce((total, material) => total + (material.weight * material.quantity), 0);
@@ -176,7 +176,7 @@ const playerLoadStats = () => {
     resetPlayerBonusStats();
     applyEquipmentStats();
     applyRecruitBonuses();
-    updateMercenariesDisplay();
+    updateVixensDisplay();
     updateMaterialsDisplay();
     updatePlayerStrengthDisplay();
     calculateStats();
