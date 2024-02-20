@@ -13,9 +13,12 @@ const confirmationModalElement = document.querySelector('#confirmationModal');
 const sellAllElement = document.querySelector("#sell-all");
 const sellRarityElement = document.querySelector('#sell-rarity');
 const menuModalElement = document.querySelector('#menuModal');
-
 const dungeonActivity = document.querySelector("#dungeonActivity");
 const dungeonAction = document.querySelector("#dungeonAction");
 const dungeonTime = document.querySelector("#dungeonTime");
 const floorCount = document.querySelector("#floorCount");
 const roomCount = document.querySelector("#roomCount");
+const dimDungeon = document.querySelector('#dungeon-main');
+const titleScreen = document.querySelector("#title-screen");
+const menuBtnElement = document.querySelector("#menu-btn");
+const unequipAllElement = document.querySelector("#unequip-all");

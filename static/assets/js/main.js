@@ -1,60 +1,10 @@
 window.addEventListener("load", function () {
-    
-    if (player === null) {
-        generatePlayer();
-    } else {
-        let target = document.querySelector("#title-screen");
-        target.style.display = "flex";
-    }
-
-    // Title Screen Validation
-    document.querySelector("#title-screen").addEventListener("click", function () {
-        player = JSON.parse(localStorage.getItem("playerData"));
-        if (player.allocated) {
-            enterDungeon();
-        } else {
-            allocationPopup();
-        }
-    });
-
-    // if (player.allocated) {
-    //     enterDungeon();
-    // } else {
-    //     allocationPopup();
-    // }
-
-    // Prevent double-click zooming on mobile devices
-    document.ondblclick = function (e) {
-        e.preventDefault();
-    }
-
-    // Submit Name
-    function generatePlayer() {
-        let playerName = "Jinx";
-        player = {
-            name: playerName,
+    player === null ? createPlayer() : titleScreen.style.display = "flex";
+    function createPlayer() {
+        const player = {
+            name: PLAYERNAME,
             lvl: 1,
-            stats: {
-                hp: null,
-                hpMax: null,
-                atk: null,
-                def: null,
-                pen: null,
-                atkSpd: null,
-                vamp: null,
-                critRate: null,
-                critDmg: null
-            },
-            baseStats: {
-                hp: 500,
-                atk: 100,
-                def: 50,
-                pen: 0,
-                atkSpd: 0.6,
-                vamp: 0,
-                critRate: 0,
-                critDmg: 50
-            },
+            stats: { ...BASE_STATS },
             equippedStats: {
                 hp: 0,
                 atk: 0,
@@ -69,22 +19,8 @@ window.addEventListener("load", function () {
                 defPct: 0,
                 penPct: 0,
             },
-            bonusStats: {
-                hp: 0,
-                atk: 0,
-                def: 0,
-                atkSpd: 0,
-                vamp: 0,
-                critRate: 0,
-                critDmg: 0
-            },
-            exp: {
-                expCurr: 0,
-                expMax: 100,
-                expCurrLvl: 0,
-                expMaxLvl: 100,
-                lvlGained: 0
-            },
+            bonusStats: { ...BASE_STATS, hp: 0, atk: 0, def: 0 },
+            exp: { ...EXP_DEFAULTS },
             inventory: {
                 consumables: [],
                 equipment: []
@@ -94,94 +30,224 @@ window.addEventListener("load", function () {
             playtime: 0,
             kills: 0,
             deaths: 0,
-            inCombat: false
+            inCombat: false,
+            luck: 1,
+            strength: 100,
+            materials: [],
+            vixens: [],
+            buffs: [],
+            banes: [],
+            energy: 100,
+            maxEnergy: 100,
+            energyCost: 1,
+            energyRegenRate: 1,
+            currentWeight: function () {
+                return this.materials.reduce((total, material) => total + (material.weight * material.quantity), 0);
+            }
         };
-        player.luck = 1; // Default luck value
-        player.strength = 100; // Example starting strength value
-        player.maxWeight = player.strength * 10; // Example formula to calculate max weight
-        player.materials = [];
-        player.vixens = [];
-        player.buffs = [];
-        player.banes = [];
-        player.energy = 100; // Starting energy
-        player.maxEnergy = 100; // Maximum energy
-        player.energyCost = 1; // Energy cost per dungeon event
-        player.energyRegenRate = 1; // Energy regained per minute of resting
-        player.currentWeight = () => player.materials.reduce((total, material) => total + (material.weight * material.quantity), 0);
-        console.log("Player generated: ", player);
-        saveData();
-        calculateStats();
+        player.maxWeight = player.strength * 10;
         player.stats.hp = player.stats.hpMax;
+        calculateStats();
         saveData();
         document.querySelector("#character-creation").style.display = "none";
         runLoad("title-screen", "flex");
+        return player;
     }
 
-    // Unequip all items
-    document.querySelector("#unequip-all").addEventListener("click", function () {
-        sfxOpen.play();
-
+    function openMenu() {
+        closeInventory();
         dungeon.status.exploring = false;
-        let dimTarget = document.querySelector('#inventory');
-        dimTarget.style.filter = "brightness(50%)";
-        defaultModalElement.style.display = "flex";
-        defaultModalElement.innerHTML = `
-        <div class="content">
-            <p>Unequip all your items?</p>
-            <div class="button-container">
-                <button id="unequip-confirm">Unequip</button>
-                <button id="unequip-cancel">Cancel</button>
-            </div>
-        </div>`;
-        let confirm = document.querySelector('#unequip-confirm');
-        let cancel = document.querySelector('#unequip-cancel');
-        confirm.onclick = function () {
-            sfxUnequip.play();
-            unequipAll();
-            continueExploring();
-            defaultModalElement.style.display = "none";
-            defaultModalElement.innerHTML = "";
-            dimTarget.style.filter = "brightness(100%)";
-        };
-        cancel.onclick = function () {
+        dimDungeon.style.filter = "brightness(50%)";
+        const menuHtml = `
+    <div class="content">
+      <div class="content-head">
+        <h3>Menu</h3>
+        <p id="close-menu"><i class="fa fa-xmark"></i></p>
+      </div>
+      <button id="player-menu">${player.name}</button>
+      <button id="stats">Current Run</button>
+      <button id="volume-btn">Volume Settings</button>
+      <button id="export-import">Export/Import Data</button>
+      <button id="quit-run">Abandon</button>
+    </div>`;
+        updateModalContent(menuHtml);
+        attachMenuEventListeners();
+    }
+
+    function closeMenu() {
+        sfxDecline.play();
+        continueExploring();
+        menuModalElement.style.display = "none";
+        dimDungeon.style.filter = "brightness(100%)";
+    }
+
+    function showPlayerStats() {
+        sfxOpen.play();
+        const playTime = formatTime(player.playtime);
+        const playerStatsHtml = `
+      <div class="content" id="profile-tab">
+        <div class="content-head">
+          <h3>Statistics</h3>
+          <p id="profile-close"><i class="fa fa-xmark"></i></p>
+        </div>
+        <p>${player.name} Lv.${player.lvl}</p>
+        <p>Kills: ${nFormatter(player.kills)}</p>
+        <p>Deaths: ${nFormatter(player.deaths)}</p>
+        <p>Playtime: ${playTime}</p>
+      </div>`;
+        updateModalContent(playerStatsHtml);
+        document.querySelector('#profile-close').addEventListener('click', () => {
             sfxDecline.play();
-            continueExploring();
-            defaultModalElement.style.display = "none";
-            defaultModalElement.innerHTML = "";
-            dimTarget.style.filter = "brightness(100%)";
-        };
+            openMenu();
+        });
+    }
+
+    function showCurrentRun() {
+        sfxOpen.play();
+        const runTime = formatTime(dungeon.statistics.runtime);
+        const runStatsHtml = `
+      <div class="content" id="run-tab">
+        <div class="content-head">
+          <h3>Current Run</h3>
+          <p id="run-close"><i class="fa fa-xmark"></i></p>
+        </div>
+        <p>${player.name} Lv.${player.lvl} (${player.skills.join(', ')})</p>
+        <p>Blessing Lvl.${player.blessing}</p>
+        <p>Curse Lvl.${Math.round((dungeon.settings.enemyScaling - 1) * 10)}</p>
+        <p>Kills: ${nFormatter(dungeon.statistics.kills)}</p>
+        <p>Runtime: ${runTime}</p>
+      </div>`;
+        updateModalContent(runStatsHtml);
+        document.querySelector('#run-close').addEventListener('click', () => {
+            sfxDecline.play();
+            openMenu();
+        });
+    }
+
+    function showVolumeSettings() {
+        sfxOpen.play();
+        const master = volume.master * 100;
+        const bgm = volume.bgm * 100;
+        const sfx = volume.sfx * 100;
+        const volumeSettingsHtml = `
+      <div class="content" id="volume-tab">
+        <div class="content-head">
+          <h3>Volume</h3>
+          <p id="volume-close"><i class="fa fa-xmark"></i></p>
+        </div>
+        <label for="master-volume">Master (${master.toFixed(0)}%)</label>
+        <input type="range" id="master-volume" min="0" max="100" value="${master}">
+        <label for="bgm-volume">BGM (${bgm.toFixed(0)}%)</label>
+        <input type="range" id="bgm-volume" min="0" max="100" value="${bgm}">
+        <label for="sfx-volume">SFX (${sfx.toFixed(0)}%)</label>
+        <input type="range" id="sfx-volume" min="0" max="100" value="${sfx}">
+        <button id="apply-volume">Apply</button>
+      </div>`;
+
+        updateModalContent(volumeSettingsHtml);
+        document.querySelector('#volume-close').addEventListener('click', () => {
+            sfxDecline.play();
+            openMenu();
+        });
+        document.querySelector('#apply-volume').addEventListener('click', applyVolumeSettings);
+        function applyVolumeSettings() {
+            const masterVolume = document.querySelector('#master-volume').value / 100;
+            const bgmVolume = document.querySelector('#bgm-volume').value / 100;
+            const sfxVolume = document.querySelector('#sfx-volume').value / 100;
+            setVolume(masterVolume, bgmVolume, sfxVolume);
+            sfxConfirm.play();
+        }
+    }
+
+    function quitRun() {
+        sfxOpen.play();
+        updateModalContent(confirmQuitHtml);
+        document.querySelector('#quit-close').addEventListener('click', () => {
+            sfxDecline.play();
+            openMenu();
+        });
+        document.querySelector('#confirm-quit').addEventListener('click', () => {
+            confirmAbandonment();
+        });
+        document.querySelector('#cancel-quit').addEventListener('click', () => {
+            sfxDecline.play();
+            openMenu();
+        });
+    }
+
+    function confirmAbandonment() {
+        sfxConfirm.play();
+        bgmDungeon.stop();
+        dimDungeon.style.filter = "brightness(100%)";
+        clearInterval(dungeonTimer);
+        clearInterval(playTimer);
+        progressReset();
+        runLoad("title-screen", "flex");
+        menuModalElement.style.display = "none";
+    }
+
+    function attachMenuEventListeners() {
+        const eventMappings = [
+            { selector: '#close-menu', handler: closeMenu },
+            { selector: '#player-menu', handler: showPlayerStats },
+            { selector: '#stats', handler: showCurrentRun },
+            { selector: '#volume-btn', handler: showVolumeSettings },
+            { selector: '#export-import', handler: showExportImport },
+            { selector: '#quit-run', handler: quitRun }
+        ];
+    
+        eventMappings.forEach(mapping => {
+            const element = document.querySelector(mapping.selector);
+            if (element) { // This check ensures the element exists before trying to attach an event listener
+                element.addEventListener('click', mapping.handler);
+            }
+        });
+    }
+
+    titleScreen.addEventListener("click", function () {
+        player = JSON.parse(localStorage.getItem("playerData")) || {};
+        player.allocated ? enterDungeon() : allocationPopup();
+        loadBuffsBanesFromLocalStorage();
     });
 
-    document.querySelector("#menu-btn").addEventListener("click", function () {
-        closeInventory();
+    unequipAllElement.addEventListener("click", function () {
+        sfxOpen.play();
+        dungeon.status.exploring = false;
+        toggleInventoryBrightness(50);
+        showModal();
+    });
 
+    defaultModalElement.addEventListener('click', function (e) {
+        if (e.target.id === 'unequip-confirm' || e.target.id === 'unequip-cancel') {
+            handleModalButtonClick(e.target.id);
+        }
+    });
+
+    menuBtnElement.addEventListener("click", openMenu);
+    menuBtnElement.addEventListener("click", function () {
+        closeInventory();
         dungeon.status.exploring = false;
         let dimDungeon = document.querySelector('#dungeon-main');
         dimDungeon.style.filter = "brightness(50%)";
         menuModalElement.style.display = "flex";
-
-        // Menu tab
         menuModalElement.innerHTML = `
-        <div class="content">
-            <div class="content-head">
-                <h3>Menu</h3>
-                <p id="close-menu"><i class="fa fa-xmark"></i></p>
-            </div>
-            <button id="player-menu">${player.name}</button>
-            <button id="stats">Current Run</button>
-            <button id="volume-btn">Volume Settings</button>
-            <button id="export-import">Export/Import Data</button>
-            <button id="quit-run">Abandon</button>
-        </div>`;
-
+            <div class="content">
+                <div class="content-head">
+                    <h3>Menu</h3>
+                    <p id="close-menu"><i class="fa fa-xmark"></i></p>
+                </div>
+                <button id="player-menu">${player.name}</button>
+                <button id="stats">Current Run</button>
+                <button id="volume-btn">Volume Settings</button>
+                <button id="export-import">Export/Import Data</button>
+                <button id="quit-run">Abandon</button>
+            </div>`;
         let close = document.querySelector('#close-menu');
         let playerMenu = document.querySelector('#player-menu');
         let runMenu = document.querySelector('#stats');
         let quitRun = document.querySelector('#quit-run');
         let exportImport = document.querySelector('#export-import');
         let volumeSettings = document.querySelector('#volume-btn');
-
-        // Player profile click function
         playerMenu.onclick = function () {
             sfxOpen.play();
             let playTime = new Date(player.playtime * 1000).toISOString().slice(11, 19);
@@ -208,8 +274,6 @@ window.addEventListener("load", function () {
                 menuModalElement.style.display = "flex";
             };
         };
-
-        // Dungeon run click function
         runMenu.onclick = function () {
             sfxOpen.play();
             let runTime = new Date(dungeon.statistics.runtime * 1000).toISOString().slice(11, 19);
@@ -237,25 +301,15 @@ window.addEventListener("load", function () {
                 menuModalElement.style.display = "flex";
             };
         };
-
-        // Quit the current run
         quitRun.onclick = function () {
             sfxOpen.play();
             menuModalElement.style.display = "none";
             defaultModalElement.style.display = "flex";
-            defaultModalElement.innerHTML = `
-            <div class="content">
-                <p>Do you want to abandon this run?</p>
-                <div class="button-container">
-                    <button id="quit-run">Abandon</button>
-                    <button id="cancel-quit">Cancel</button>
-                </div>
-            </div>`;
+            defaultModalElement.innerHTML = defaultModalElementHtml;
             let quit = document.querySelector('#quit-run');
             let cancel = document.querySelector('#cancel-quit');
             quit.onclick = function () {
                 sfxConfirm.play();
-                // Clear out everything, send the player back to meny and clear progress.
                 bgmDungeon.stop();
                 let dimDungeon = document.querySelector('#dungeon-main');
                 dimDungeon.style.filter = "brightness(100%)";
@@ -276,11 +330,8 @@ window.addEventListener("load", function () {
                 menuModalElement.style.display = "flex";
             };
         };
-
-        // Opens the volume settings
         volumeSettings.onclick = function () {
             sfxOpen.play();
-
             let master = volume.master * 100;
             let bgm = (volume.bgm * 100) * 2;
             let sfx = volume.sfx * 100;
@@ -313,23 +364,18 @@ window.addEventListener("load", function () {
                 defaultModalElement.innerHTML = "";
                 menuModalElement.style.display = "flex";
             };
-
-            // Volume Control
             masterVol.oninput = function () {
                 master = this.value;
                 document.querySelector('#master-label').innerHTML = `Master (${master}%)`;
             };
-
             bgmVol.oninput = function () {
                 bgm = this.value;
                 document.querySelector('#bgm-label').innerHTML = `BGM (${bgm}%)`;
             };
-
             sfxVol.oninput = function () {
                 sfx = this.value;
                 document.querySelector('#sfx-label').innerHTML = `SFX (${sfx}%)`;
             };
-
             applyVol.onclick = function () {
                 volume.master = master / 100;
                 volume.bgm = (bgm / 100) / 2;
@@ -340,8 +386,6 @@ window.addEventListener("load", function () {
                 saveData();
             };
         };
-
-        // Export/Import Save Data
         exportImport.onclick = function () {
             sfxOpen.play();
             let exportedData = exportData();
@@ -384,8 +428,6 @@ window.addEventListener("load", function () {
                 menuModalElement.style.display = "flex";
             };
         };
-
-        // Close menu
         close.onclick = function () {
             sfxDecline.play();
             continueExploring();
@@ -396,7 +438,6 @@ window.addEventListener("load", function () {
     });
 });
 
-// Loading Screen
 const runLoad = (id, display) => {
     let loader = document.querySelector("#loading");
     loader.style.display = "flex";
@@ -407,7 +448,6 @@ const runLoad = (id, display) => {
     }, 1000);
 }
 
-// Start the game
 const enterDungeon = () => {
     sfxConfirm.play();
     document.querySelector("#title-screen").style.display = "none";
@@ -418,7 +458,7 @@ const enterDungeon = () => {
         console.log("You encountered: ", enemy.name);
         startCombat(bgmBattleMain);
     } else {
-        // bgmDungeon.play();
+
     }
     if (player.stats.hp == 0) {
         progressReset();
@@ -427,7 +467,6 @@ const enterDungeon = () => {
     playerLoadStats();
 }
 
-// Save all the data into local storage
 const saveData = () => {
     const playerData = JSON.stringify(player);
     const dungeonData = JSON.stringify(dungeon);
@@ -439,398 +478,80 @@ const saveData = () => {
     localStorage.setItem("volumeData", volumeData);
 }
 
-// Calculate every player stat
+const calculateStat = (base, bonus, equipped) => {
+    return Math.round(base + base * (bonus / 100) + equipped);
+};
+
 const calculateStats = () => {
-    let equipmentAtkSpd = player.baseStats.atkSpd * (player.equippedStats.atkSpd / 100);
-    let playerHpBase = player.baseStats.hp;
-    let playerAtkBase = player.baseStats.atk;
-    let playerDefBase = player.baseStats.def;
-    let playerAtkSpdBase = player.baseStats.atkSpd;
-    let playerVampBase = player.baseStats.vamp;
-    let playerCRateBase = player.baseStats.critRate;
-    let playerCDmgBase = player.baseStats.critDmg;
+    const { baseStats, bonusStats, equippedStats } = player;
+    player.stats.hpMax = calculateStat(baseStats.hp, bonusStats.hp, equippedStats.hp);
+    player.stats.atk = calculateStat(baseStats.atk, bonusStats.atk, equippedStats.atk);
+    player.stats.def = calculateStat(baseStats.def, bonusStats.def, equippedStats.def);
+    player.stats.vamp = baseStats.vamp + bonusStats.vamp + equippedStats.vamp;
+    player.stats.critRate = baseStats.critRate + bonusStats.critRate + equippedStats.critRate;
+    player.stats.critDmg = baseStats.critDmg + bonusStats.critDmg + equippedStats.critDmg;
+    const baseAtkSpd = baseStats.atkSpd * (1 + bonusStats.atkSpd / 100);
+    const totalAtkSpd = baseAtkSpd + baseAtkSpd * (equippedStats.atkSpd / 100) + equippedStats.atkSpd;
+    player.stats.atkSpd = Math.min(2.5, totalAtkSpd);
+};
 
-    player.stats.hpMax = Math.round((playerHpBase + playerHpBase * (player.bonusStats.hp / 100)) + player.equippedStats.hp);
-    player.stats.atk = Math.round((playerAtkBase + playerAtkBase * (player.bonusStats.atk / 100)) + player.equippedStats.atk);
-    player.stats.def = Math.round((playerDefBase + playerDefBase * (player.bonusStats.def / 100)) + player.equippedStats.def);
-    player.stats.atkSpd = (playerAtkSpdBase + playerAtkSpdBase * (player.bonusStats.atkSpd / 100)) + equipmentAtkSpd + (equipmentAtkSpd * (player.equippedStats.atkSpd / 100));
-    player.stats.vamp = playerVampBase + player.bonusStats.vamp + player.equippedStats.vamp;
-    player.stats.critRate = playerCRateBase + player.bonusStats.critRate + player.equippedStats.critRate;
-    player.stats.critDmg = playerCDmgBase + player.bonusStats.critDmg + player.equippedStats.critDmg;
+const resetPlayerStats = () => ({
+    hp: player.stats.hpMax,
+    atk: player.bonusStats.atk * 0.9,
+    def: player.bonusStats.def * 0.9,
+    atkSpd: player.bonusStats.atkSpd * 0.9,
+    vamp: player.bonusStats.vamp * 0.9,
+    critRate: player.bonusStats.critRate * 0.9,
+    critDmg: player.bonusStats.critDmg * 0.9,
+});
 
-    // Caps attack speed to 2.5
-    if (player.stats.atkSpd > 2.5) {
-        player.stats.atkSpd = 2.5;
-    }
-}
-
-// Resets the progress back to start
-const progressReset = () => {
+const resetPlayer = () => {
     player.stats.hp = player.stats.hpMax;
-    player.lvl = player.lvl - 5;
-    if (player.lvl < 1) {
-        player.lvl = 1;
-    }
+    player.lvl = Math.max(player.lvl - 5, 1);
     player.blessing = 1;
-    // player.exp = {
-    //     expCurr: 0,
-    //     // expMax: 100,
-    //     // expCurrLvl: 0,
-    //     // expMaxLvl: 100,
-    //     // lvlGained: 0
-    // };
-    player.bonusStats = {
-        hp: player.bonusStats.hp * 0.9,
-        atk: player.bonusStats.atk * 0.9,
-        def: player.bonusStats.def * 0.9,
-        atkSpd: player.bonusStats.atkSpd * 0.9,
-        vamp: player.bonusStats.vamp * 0.9,
-        critRate: player.bonusStats.critRate * 0.9,
-        critDmg: player.bonusStats.critDmg * 0.9
-    };
+    Object.assign(player.bonusStats, resetPlayerStats());
     player.skills = [];
     player.inCombat = false;
-
-    player.luck = 1; // Default luck value
-    player.strength = 100; // Example starting strength value
+    player.luck = 1;
+    player.strength = 100;
     player.materials = [];
     player.vixens = [];
-    player.energy = 10; // Starting energy
-    player.maxEnergy = 100; // Maximum energy
-    player.energyCost = 1; // Energy cost per dungeon event
-    player.energyRegenRate = 1; // Energy regained per minute of resting
+    player.energy = 10;
+    player.maxEnergy = 100;
+    player.energyCost = 1;
+    player.energyRegenRate = 1;
     player.currentWeight = () => player.materials.reduce((total, material) => total + (material.weight * material.quantity), 0);
     player.buffs = [];
     player.banes = [];
     player.logEntries = [];
+};
 
-    // dungeon.progress.floor = 1;
-    // dungeon.progress.room = 1;
+const resetDungeon = () => {
     dungeon.statistics.kills = 0;
-    dungeon.status = {
-        exploring: false,
-        paused: true,
-        event: false,
-    };
-    // dungeon.settings = {
-    //     enemyBaseLvl: 1,
-    //     enemyLvlGap: 5,
-    //     enemyBaseStats: 1,
-    //     enemyScaling: 1.1,
-    // };
-    // delete dungeon.enemyMultipliers;
-    // delete player.allocated;
+    dungeon.status = { exploring: false, paused: true, event: false };
     dungeon.backlog.length = 0;
     dungeon.action = 0;
     dungeon.statistics.runtime = 0;
+};
+
+const progressReset = () => {
+    resetPlayer();
+    resetDungeon();
     combatBacklog.length = 0;
     saveData();
     location.reload();
-}
+};
 
-// Export and Import Save Data
-const exportData = () => {
-    const exportedData = btoa(JSON.stringify(player));
-    return exportedData;
-}
-
-const importData = (importedData) => {
-    try {
-        let playerImport = JSON.parse(atob(importedData));
-        if (playerImport.inventory !== undefined) {
-            sfxOpen.play();
-            defaultModalElement.style.display = "none";
-            confirmationModalElement.style.display = "flex";
-            confirmationModalElement.innerHTML = `
-            <div class="content">
-                <p>Are you sure you want to import this data? This will erase the current data and reset your dungeon progress.</p>
-                <div class="button-container">
-                    <button id="import-btn">Import</button>
-                    <button id="cancel-btn">Cancel</button>
-                </div>
-            </div>`;
-            let confirm = document.querySelector("#import-btn");
-            let cancel = document.querySelector("#cancel-btn");
-            confirm.onclick = function () {
-                sfxConfirm.play();
-                player = playerImport;
-                saveData();
-                bgmDungeon.stop();
-                let dimDungeon = document.querySelector('#dungeon-main');
-                dimDungeon.style.filter = "brightness(100%)";
-                dimDungeon.style.display = "none";
-                menuModalElement.style.display = "none";
-                menuModalElement.innerHTML = "";
-                confirmationModalElement.style.display = "none";
-                confirmationModalElement.innerHTML = "";
-                defaultModalElement.style.display = "none";
-                defaultModalElement.innerHTML = "";
-                runLoad("title-screen", "flex");
-                clearInterval(dungeonTimer);
-                clearInterval(playTimer);
-                progressReset();
-            }
-            cancel.onclick = function () {
-                sfxDecline.play();
-                confirmationModalElement.style.display = "none";
-                confirmationModalElement.innerHTML = "";
-                defaultModalElement.style.display = "flex";
-            }
-        } else {
-            sfxDeny.play();
-        }
-    } catch (err) {
-        sfxDeny.play();
-    }
-}
-
-// Player Stat Allocation
-const allocationPopup = () => {
-    let allocation = {
-        hp: 5,
-        atk: 5,
-        def: 5,
-        atkSpd: 5
-    }
-    const updateStats = () => {
-        stats = {
-            hp: 50 * allocation.hp,
-            atk: 10 * allocation.atk,
-            def: 10 * allocation.def,
-            atkSpd: 0.4 + (0.02 * allocation.atkSpd)
-        }
-    }
-    updateStats();
-    let points = 20;
-    const loadContent = function () {
-        defaultModalElement.innerHTML = `
-        <div class="content" id="allocate-stats">
-            <div class="content-head">
-                <h3>Allocate Stats</h3>
-                <p id="allocate-close"><i class="fa fa-xmark"></i></p>
-            </div>
-            <div class="row">
-                <p><i class="fas fa-heart"></i><span id="hpDisplay">HP: ${stats.hp}</span></p>
-                <div class="row">
-                    <button id="hpMin">-</button>
-                    <span id="hpAllo">${allocation.hp}</span>
-                    <button id="hpAdd">+</button>
-                </div>
-            </div>
-            <div class="row">
-                <p><i class="ra ra-sword"></i><span id="atkDisplay">ATK: ${stats.atk}</span></p>
-                <div class="row">
-                    <button id="atkMin">-</button>
-                    <span id="atkAllo">${allocation.atk}</span>
-                    <button id="atkAdd">+</button>
-                </div>
-            </div>
-            <div class="row">
-                <p><i class="ra ra-round-shield"></i><span id="defDisplay">DEF: ${stats.def}</span></p>
-                <div class="row">
-                    <button id="defMin">-</button>
-                    <span id="defAllo">${allocation.def}</span>
-                    <button id="defAdd">+</button>
-                </div>
-            </div>
-            <div class="row">
-                <p><i class="ra ra-player-dodge"></i><span id="atkSpdDisplay">ATK.SPD: ${stats.atkSpd}</span></p>
-                <div class="row">
-                    <button id="atkSpdMin">-</button>
-                    <span id="atkSpdAllo">${allocation.atkSpd}</span>
-                    <button id="atkSpdAdd">+</button>
-                </div>
-            </div>
-            <div class="row">
-                <p id="alloPts">Stat Points: ${points}</p>
-                <button id="allocate-reset">Reset</button>
-            </div>
-            <div class="row">
-                <p>Passive</p>
-                <select id="select-skill">
-                    <option value="Remnant Razor">Remnant Razor</option>
-                    <option value="Titan's Will">Titan's Will</option>
-                    <option value="Devastator">Devastator</option>
-                    <option value="Blade Dance">Blade Dance</option>
-                    <option value="Paladin's Heart">Paladin's Heart</option>
-                    <option value="Aegis Thorns">Aegis Thorns</option>
-                </select>
-            </div>
-            <div class="row primary-panel pad">
-                <p id="skill-desc">Attacks deal extra 8% of enemies' current health on hit.</p>
-            </div>
-            <button id="allocate-confirm">Confirm</button>
-        </div>`;
-    }
-    defaultModalElement.style.display = "flex";
-    document.querySelector("#title-screen").style.filter = "brightness(50%)";
-    loadContent();
-
-    // Stat Allocation
-    const handleStatButtons = (e) => {
-        let rx = /\.0+$|(\.[0-9]*[1-9])0+$/;
-        if (e.includes("Add")) {
-            let stat = e.split("Add")[0];
-            if (points > 0) {
-                sfxConfirm.play();
-                allocation[stat]++;
-                points--;
-                updateStats();
-                document.querySelector(`#${stat}Display`).innerHTML = `${stat.replace(/([A-Z])/g, ' $1').trim().replace(/ /g, '.').toUpperCase()}: ${stats[stat].toFixed(2).replace(rx, "$1")}`;
-                document.querySelector(`#${stat}Allo`).innerHTML = allocation[stat];
-                document.querySelector(`#alloPts`).innerHTML = `Stat Points: ${points}`;
-            } else {
-                sfxDeny.play();
-            }
-        } else if (e.includes("Min")) {
-            let stat = e.split("Min")[0];
-            if (allocation[stat] > 5) {
-                sfxConfirm.play();
-                allocation[stat]--;
-                points++;
-                updateStats();
-                document.querySelector(`#${stat}Display`).innerHTML = `${stat.replace(/([A-Z])/g, ' $1').trim().replace(/ /g, '.').toUpperCase()}: ${stats[stat].toFixed(2).replace(rx, "$1")}`;
-                document.querySelector(`#${stat}Allo`).innerHTML = allocation[stat];
-                document.querySelector(`#alloPts`).innerHTML = `Stat Points: ${points}`;
-            } else {
-                sfxDeny.play();
-            }
-        }
-    }
-    document.querySelector("#hpAdd").onclick = function () {
-        handleStatButtons("hpAdd")
-    };
-    document.querySelector("#hpMin").onclick = function () {
-        handleStatButtons("hpMin")
-    };
-    document.querySelector("#atkAdd").onclick = function () {
-        handleStatButtons("atkAdd")
-    };
-    document.querySelector("#atkMin").onclick = function () {
-        handleStatButtons("atkMin")
-    };
-    document.querySelector("#defAdd").onclick = function () {
-        handleStatButtons("defAdd")
-    };
-    document.querySelector("#defMin").onclick = function () {
-        handleStatButtons("defMin")
-    };
-    document.querySelector("#atkSpdAdd").onclick = function () {
-        handleStatButtons("atkSpdAdd")
-    };
-    document.querySelector("#atkSpdMin").onclick = function () {
-        handleStatButtons("atkSpdMin")
-    };
-
-    // Passive skills
-    let selectSkill = document.querySelector("#select-skill");
-    let skillDesc = document.querySelector("#skill-desc");
-    selectSkill.onclick = function () {
-        sfxConfirm.play();
-    }
-    selectSkill.onchange = function () {
-        if (selectSkill.value == "Remnant Razor") {
-            skillDesc.innerHTML = "Attacks deal extra 8% of enemies' current health on hit.";
-        }
-        if (selectSkill.value == "Titan's Will") {
-            skillDesc.innerHTML = "Attacks deal extra 5% of your maximum health on hit.";
-        }
-        if (selectSkill.value == "Devastator") {
-            skillDesc.innerHTML = "Deal 30% more damage but you lose 30% base attack speed.";
-        }
-        if (selectSkill.value == "Rampager") {
-            skillDesc.innerHTML = "Increase attack by 5 after each hit. Stack resets after battle.";
-        }
-        if (selectSkill.value == "Blade Dance") {
-            skillDesc.innerHTML = "Gain increased attack speed after each hit. Stack resets after battle.";
-        }
-        if (selectSkill.value == "Paladin's Heart") {
-            skillDesc.innerHTML = "You receive 25% less damage permanently.";
-        }
-        if (selectSkill.value == "Aegis Thorns") {
-            skillDesc.innerHTML = "Enemies receive 15% of the damage they dealt.";
-        }
-    }
-
-    // Operation Buttons
-    let confirm = document.querySelector("#allocate-confirm");
-    let reset = document.querySelector("#allocate-reset");
-    let close = document.querySelector("#allocate-close");
-    confirm.onclick = function () {
-        // Set allocated stats to player base stats
-        player.baseStats = {
-            hp: stats.hp,
-            atk: stats.atk,
-            def: stats.def,
-            pen: 0,
-            atkSpd: stats.atkSpd,
-            vamp: 0,
-            critRate: 0,
-            critDmg: 50
-        }
-
-        // Set player skill
-        objectValidation();
-        if (selectSkill.value == "Remnant Razor") {
-            player.skills.push("Remnant Razor");
-        }
-        if (selectSkill.value == "Titan's Will") {
-            player.skills.push("Titan's Will");
-        }
-        if (selectSkill.value == "Devastator") {
-            player.skills.push("Devastator");
-            player.baseStats.atkSpd = player.baseStats.atkSpd - ((30 * player.baseStats.atkSpd) / 100);
-        }
-        if (selectSkill.value == "Rampager") {
-            player.skills.push("Rampager");
-        }
-        if (selectSkill.value == "Blade Dance") {
-            player.skills.push("Blade Dance");
-        }
-        if (selectSkill.value == "Paladin's Heart") {
-            player.skills.push("Paladin's Heart");
-        }
-        if (selectSkill.value == "Aegis Thorns") {
-            player.skills.push("Aegis Thorns");
-        }
-
-        // Proceed to dungeon
-        player.allocated = true;
-        enterDungeon();
-        player.stats.hp = player.stats.hpMax;
-        playerLoadStats();
-        defaultModalElement.style.display = "none";
-        defaultModalElement.innerHTML = "";
-        document.querySelector("#title-screen").style.filter = "brightness(100%)";
-    }
-    reset.onclick = function () {
-        sfxDecline.play();
-        allocation = {
-            hp: 5,
-            atk: 5,
-            def: 5,
-            atkSpd: 5
-        };
-        points = 20;
-        updateStats();
-
-        // Display Reset
-        document.querySelector(`#hpDisplay`).innerHTML = `HP: ${stats.hp}`;
-        document.querySelector(`#atkDisplay`).innerHTML = `ATK: ${stats.atk}`;
-        document.querySelector(`#defDisplay`).innerHTML = `DEF: ${stats.def}`;
-        document.querySelector(`#atkSpdDisplay`).innerHTML = `ATK.SPD: ${stats.atkSpd}`;
-        document.querySelector(`#hpAllo`).innerHTML = allocation.hp;
-        document.querySelector(`#atkAllo`).innerHTML = allocation.atk;
-        document.querySelector(`#defAllo`).innerHTML = allocation.def;
-        document.querySelector(`#atkSpdAllo`).innerHTML = allocation.atkSpd;
-        document.querySelector(`#alloPts`).innerHTML = `Stat Points: ${points}`;
-    }
-    close.onclick = function () {
-        sfxDecline.play();
-        defaultModalElement.style.display = "none";
-        defaultModalElement.innerHTML = "";
-        document.querySelector("#title-screen").style.filter = "brightness(100%)";
-    }
+const resetUI = () => {
+    bgmDungeon.stop();
+    document.querySelector('#dungeon-main').style.filter = "brightness(100%)";
+    menuModalElement.style.display = "none";
+    confirmationModalElement.style.display = "none";
+    defaultModalElement.style.display = "none";
+    [menuModalElement, confirmationModalElement, defaultModalElement].forEach(el => el.innerHTML = "");
+    runLoad("title-screen", "flex");
+    clearInterval(dungeonTimer);
+    clearInterval(playTimer);
 }
 
 const objectValidation = () => {
@@ -844,5 +565,3 @@ const objectValidation = () => {
     }
     saveData();
 }
-
-loadBuffsBanesFromLocalStorage();

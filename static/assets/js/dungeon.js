@@ -13,7 +13,6 @@ const initialDungeonLoad = () => {
             paused: true,
             event: false,
         };
-        dungeon.backlog.length = 2;
         updateDungeonLog();
     }
     loadDungeonProgress();

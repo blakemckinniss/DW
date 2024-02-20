@@ -1,5 +1,7 @@
-const createEquipment = () => {
-    const equipment = {
+
+
+const createEquipment = (dungeon, player) => {
+    let equipment = {
         category: null,
         attribute: null,
         type: null,
@@ -10,193 +12,56 @@ const createEquipment = () => {
         stats: [],
     };
 
-    // Generate random equipment attribute
-    const equipmentAttributes = ["Damage", "Defense"];
-    equipment.attribute = equipmentAttributes[Math.floor(Math.random() * equipmentAttributes.length)];
-
-    // Generate random equipment name and type based on attribute
-    if (equipment.attribute == "Damage") {
-        const equipmentCategories = ["Sword", "Axe", "Hammer", "Dagger", "Flail", "Scythe"];
-        equipment.category = equipmentCategories[Math.floor(Math.random() * equipmentCategories.length)];
-        equipment.type = "Weapon";
-    } else if (equipment.attribute == "Defense") {
-        const equipmentTypes = ["Armor", "Shield", "Helmet"];
-        equipment.type = equipmentTypes[Math.floor(Math.random() * equipmentTypes.length)];
-        if (equipment.type == "Armor") {
-            const equipmentCategories = ["Plate", "Chain", "Leather"];
-            equipment.category = equipmentCategories[Math.floor(Math.random() * equipmentCategories.length)];
-        } else if (equipment.type == "Shield") {
-            const equipmentCategories = ["Tower", "Kite", "Buckler"];
-            equipment.category = equipmentCategories[Math.floor(Math.random() * equipmentCategories.length)];
-        } else if (equipment.type == "Helmet") {
-            const equipmentCategories = ["Great Helm", "Horned Helm"];
-            equipment.category = equipmentCategories[Math.floor(Math.random() * equipmentCategories.length)];
-        }
-    }
-
-    // Generate random equipment rarity
-    const rarityChances = {
-        "Common": 0.7,
-        "Uncommon": 0.2,
-        "Rare": 0.04,
-        "Epic": 0.03,
-        "Legendary": 0.02,
-        "Heirloom": 0.01
-    };
-
-    const randomNumber = Math.random();
-    let cumulativeChance = 0;
-
-    for (let rarity in rarityChances) {
-        cumulativeChance += rarityChances[rarity];
-        if (randomNumber <= cumulativeChance) {
-            equipment.rarity = rarity;
-            break;
-        }
-    }
-
-    // Determine number of times to loop based on equipment rarity
-    let loopCount;
-    switch (equipment.rarity) {
-        case "Common":
-            loopCount = 2;
-            break;
-        case "Uncommon":
-            loopCount = 3;
-            break;
-        case "Rare":
-            loopCount = 4;
-            break;
-        case "Epic":
-            loopCount = 5;
-            break;
-        case "Legendary":
-            loopCount = 6;
-            break;
-        case "Heirloom":
-            loopCount = 8;
-            break;
-    }
-
-    // Generate and append random stats to the stats array
-    const physicalStats = ["atk", "atkSpd", "vamp", "critRate", "critDmg"];
-    const damageyStats = ["atk", "atk", "vamp", "critRate", "critDmg", "critDmg"];
-    const speedyStats = ["atkSpd", "atkSpd", "atk", "vamp", "critRate", "critRate", "critDmg"];
-    const defenseStats = ["hp", "hp", "def", "def", "atk"];
-    const dmgDefStats = ["hp", "def", "atk", "atk", "critRate", "critDmg"];
-    let statTypes;
-    if (equipment.attribute == "Damage") {
-        if (equipment.category == "Axe" || equipment.category == "Scythe") {
-            statTypes = damageyStats;
-        } else if (equipment.category == "Dagger" || equipment.category == "Flail") {
-            statTypes = speedyStats;
-        } else if (equipment.category == "Hammer") {
-            statTypes = dmgDefStats;
+    function assignEquipmentAttribute(equipment, options) {
+        const attribute = getRandomElement(Object.keys(options));
+        equipment.attribute = attribute;
+        if (attribute === "Damage") {
+            equipment.type = options[attribute].type;
+            equipment.category = getRandomElement(options[attribute].categories);
         } else {
-            statTypes = physicalStats;
-        }
-    } else if (equipment.attribute == "Defense") {
-        statTypes = defenseStats;
-    }
-    let equipmentValue = 0;
-    for (let i = 0; i < loopCount; i++) {
-        let statType = statTypes[Math.floor(Math.random() * statTypes.length)];
+            const { type, category } = Object.entries(options[attribute].types)
+                .reduce((acc, [type, categories]) => {
+                    if (!acc.category) {
+                        acc.type = type;
+                        acc.category = getRandomElement(categories);
+                    }
+                    return acc;
+                }, { type: null, category: null });
 
-        // Stat scaling for equipment
-        const maxLvl = dungeon.progress.floor * dungeon.settings.enemyLvlGap + (dungeon.settings.enemyBaseLvl - 1);
-        const minLvl = maxLvl - (dungeon.settings.enemyLvlGap - 1);
-        // Set equipment level with Lv.100 cap
-        equipment.lvl = randomizeNum(minLvl, maxLvl);
-        if (equipment.lvl > 100) {
-            equipment.lvl = 100;
-        }
-        // Set stat scaling and equipment tier Tier 10 cap
-        let enemyScaling = dungeon.settings.enemyScaling;
-        if (enemyScaling > 2) {
-            enemyScaling = 2;
-        }
-        let statMultiplier = (enemyScaling - 1) * equipment.lvl;
-        equipment.tier = Math.round((enemyScaling - 1) * 10);
-        let hpScaling = (40 * randomizeDecimal(0.5, 1.5)) + ((40 * randomizeDecimal(0.5, 1.5)) * statMultiplier);
-        let atkDefScaling = (16 * randomizeDecimal(0.5, 1.5)) + ((16 * randomizeDecimal(0.5, 1.5)) * statMultiplier);
-        let cdAtkSpdScaling = (3 * randomizeDecimal(0.5, 1.5)) + ((3 * randomizeDecimal(0.5, 1.5)) * statMultiplier);
-        let crVampScaling = (2 * randomizeDecimal(0.5, 1.5)) + ((2 * randomizeDecimal(0.5, 1.5)) * statMultiplier);
-
-        // Set randomized numbers to respective stats and increment sell value
-        if (statType === "hp") {
-            statValue = randomizeNum(hpScaling * 0.5, hpScaling);
-            equipmentValue += statValue;
-        } else if (statType === "atk") {
-            statValue = randomizeNum(atkDefScaling * 0.5, atkDefScaling);
-            equipmentValue += statValue * 2.5;
-        } else if (statType === "def") {
-            statValue = randomizeNum(atkDefScaling * 0.5, atkDefScaling);
-            equipmentValue += statValue * 2.5;
-        } else if (statType === "atkSpd") {
-            statValue = randomizeDecimal(cdAtkSpdScaling * 0.5, cdAtkSpdScaling);
-            if (statValue > 15) {
-                statValue = 15 * randomizeDecimal(0.5, 1);
-                loopCount++;
-            }
-            equipmentValue += statValue * 8.33;
-        } else if (statType === "vamp") {
-            statValue = randomizeDecimal(crVampScaling * 0.5, crVampScaling);
-            if (statValue > 8) {
-                statValue = 8 * randomizeDecimal(0.5, 1);
-                loopCount++;
-            }
-            equipmentValue += statValue * 20.83;
-        } else if (statType === "critRate") {
-            statValue = randomizeDecimal(crVampScaling * 0.5, crVampScaling);
-            if (statValue > 10) {
-                statValue = 10 * randomizeDecimal(0.5, 1);
-                loopCount++;
-            }
-            equipmentValue += statValue * 20.83;
-        } else if (statType === "critDmg") {
-            statValue = randomizeDecimal(cdAtkSpdScaling * 0.5, cdAtkSpdScaling);
-            equipmentValue += statValue * 8.33;
-        }
-
-        // Cap maximum stat rolls for equipment rarities
-        if (equipment.rarity == "Common" && loopCount > 3) {
-            loopCount--;
-        } else if (equipment.rarity == "Uncommon" && loopCount > 4) {
-            loopCount--;
-        } else if (equipment.rarity == "Rare" && loopCount > 5) {
-            loopCount--;
-        } else if (equipment.rarity == "Epic" && loopCount > 6) {
-            loopCount--;
-        } else if (equipment.rarity == "Legendary" && loopCount > 7) {
-            loopCount--;
-        } else if (equipment.rarity == "Heirloom" && loopCount > 9) {
-            loopCount--;
-        }
-
-        // Check if stat type already exists in stats array
-        let statExists = false;
-        for (let j = 0; j < equipment.stats.length; j++) {
-            if (Object.keys(equipment.stats[j])[0] == statType) {
-                statExists = true;
-                break;
-            }
-        }
-
-        // If stat type already exists, add values together
-        if (statExists) {
-            for (let j = 0; j < equipment.stats.length; j++) {
-                if (Object.keys(equipment.stats[j])[0] == statType) {
-                    equipment.stats[j][statType] += statValue;
-                    break;
-                }
-            }
-        }
-
-        // If stat type does not exist, add new stat to stats array
-        else {
-            equipment.stats.push({ [statType]: statValue });
+            equipment.type = type;
+            equipment.category = category;
         }
     }
+
+    function assignRarity(equipment, rarityChances) {
+        const randomNumber = Math.random();
+        let cumulativeChance = 0;
+        for (let rarity in rarityChances) {
+            cumulativeChance += rarityChances[rarity];
+            if (randomNumber <= cumulativeChance) {
+                equipment.rarity = rarity;
+                return;
+            }
+        }
+    }
+
+    function assignStats(equipment) {
+        const { attribute, category } = equipment;
+        if (attribute === "Damage") {
+            equipment.stats = statsConfig[attribute][category] || statsConfig[attribute].default;
+        } else if (attribute === "Defense") {
+            equipment.stats = statsConfig[attribute];
+        }
+    }
+
+    assignEquipmentAttribute(equipment, equipmentOptions);
+    assignRarity(equipment, rarityChances);
+    assignStats(equipment);
+
+    const { level, enemyScaling } = calculateLevelAndScaling(dungeon);
+    equipment.lvl = level;
+    equipment.tier = Math.round((enemyScaling - 1) * TIER_CAP);
+    let equipmentValue = calculateAndAssignStatsValues(equipment, enemyScaling, player);
     equipment.value = Math.round(equipmentValue * 3);
     player.inventory.equipment.push(JSON.stringify(equipment));
 
@@ -204,234 +69,161 @@ const createEquipment = () => {
     showInventory();
     showEquipment();
 
-    const itemShow = {
-        category: equipment.category,
-        rarity: equipment.rarity,
-        lvl: equipment.lvl,
-        tier: equipment.tier,
-        icon: equipmentIcon(equipment.category),
-        stats: equipment.stats
-    }
+    const itemShow = generateItemShowcase(equipment);
     return itemShow;
-}
+};
 
 const equipmentIcon = (equipment) => {
-    if (equipment == "Sword") {
-        return '<i class="ra ra-relic-blade"></i>';
-    } else if (equipment == "Axe") {
-        return '<i class="ra ra-axe"></i>';
-    } else if (equipment == "Hammer") {
-        return '<i class="ra ra-flat-hammer"></i>';
-    } else if (equipment == "Dagger") {
-        return '<i class="ra ra-bowie-knife"></i>';
-    } else if (equipment == "Flail") {
-        return '<i class="ra ra-chain"></i>';
-    } else if (equipment == "Scythe") {
-        return '<i class="ra ra-scythe"></i>';
-    } else if (equipment == "Plate") {
-        return '<i class="ra ra-vest"></i>';
-    } else if (equipment == "Chain") {
-        return '<i class="ra ra-vest"></i>';
-    } else if (equipment == "Leather") {
-        return '<i class="ra ra-vest"></i>';
-    } else if (equipment == "Tower") {
-        return '<i class="ra ra-shield"></i>';
-    } else if (equipment == "Kite") {
-        return '<i class="ra ra-heavy-shield"></i>';
-    } else if (equipment == "Buckler") {
-        return '<i class="ra ra-round-shield"></i>';
-    } else if (equipment == "Great Helm") {
-        return '<i class="ra ra-knight-helmet"></i>';
-    } else if (equipment == "Horned Helm") {
-        return '<i class="ra ra-helmet"></i>';
-    }
-}
+    const iconClass = equipmentIcons[equipment];
+    return iconClass ? `<i class="ra ${iconClass}"></i>` : '';
+};
 
-// Show full detail of the item
-const showItemInfo = (item, icon, type, i) => {
-    sfxOpen.play();
+const generateStatHtml = (stat) => {
+    const key = Object.keys(stat)[0];
+    const value = stat[key];
+    const formattedKey = key.replace(/([A-Z])/g, " $1").replace(/crit/g, "c").toUpperCase().trim();
+    const formattedValue = typeof value === 'number' ? value.toFixed(2).replace(/\.0+$|(\.[0-9]*[1-9])0+$/, "$1") : value;
+    return `<li>${formattedKey}+${formattedValue}${typeof value === 'number' ? '%' : ''}</li>`;
+};
 
-    dungeon.status.exploring = false;
-    let itemInfo = document.querySelector("#equipmentInfo");
-    let rx = /\.0+$|(\.[0-9]*[1-9])0+$/;
-    let dimContainer = document.querySelector(`#inventory`);
-    if (item.tier == undefined) {
-        item.tier = 1;
-    }
-    itemInfo.style.display = "flex";
-    dimContainer.style.filter = "brightness(50%)";
-    itemInfo.innerHTML = `
-            <div class="content">
-                <h3 class="${item.rarity}">${icon}${item.rarity} ${item.category}</h3>
-                <h5 class="lvltier ${item.rarity}"><b>Lv.${item.lvl} Tier ${item.tier}</b></h5>
-                <ul>
-                ${item.stats.map(stat => {
-        if (Object.keys(stat)[0] === "critRate" || Object.keys(stat)[0] === "critDmg" || Object.keys(stat)[0] === "atkSpd" || Object.keys(stat)[0] === "vamp") {
-            return `<li>${Object.keys(stat)[0].toString().replace(/([A-Z])/g, ".$1").replace(/crit/g, "c").toUpperCase()}+${stat[Object.keys(stat)[0]].toFixed(2).replace(rx, "$1")}%</li>`;
-        }
-        else {
-            return `<li>${Object.keys(stat)[0].toString().replace(/([A-Z])/g, ".$1").replace(/crit/g, "c").toUpperCase()}+${stat[Object.keys(stat)[0]]}</li>`;
-        }
-    }).join('')}
-                </ul>
-                <div class="button-container">
-                    <button id="un-equip">${type}</button>
-                    <button id="sell-equip"><i class="fas fa-coins" style="color: #FFD700;"></i>${nFormatter(item.value)}</button>
-                    <button id="close-item-info">Close</button>
-                </div>
-            </div>`;
-
-    // Equip/Unequip button for the item
-    let unEquip = document.querySelector("#un-equip");
-    unEquip.onclick = function () {
-        if (type == "Equip") {
-            // Remove the item from the inventory and add it to the equipment
-            if (player.equipped.length >= 6) {
-                sfxDeny.play();
-            } else {
-                sfxEquip.play();
-
-                // Equip the item
-                player.inventory.equipment.splice(i, 1);
-                player.equipped.push(item);
-
-                itemInfo.style.display = "none";
-                dimContainer.style.filter = "brightness(100%)";
-                playerLoadStats();
-                saveData();
-                continueExploring();
-            }
-        } else if (type == "Unequip") {
-            sfxUnequip.play();
-
-            // Remove the item from the equipment and add it to the inventory
-            player.equipped.splice(i, 1);
-            player.inventory.equipment.push(JSON.stringify(item));
-
-            itemInfo.style.display = "none";
-            dimContainer.style.filter = "brightness(100%)";
-            playerLoadStats();
-            saveData();
-            continueExploring();
-        }
-    };
-
-    // Sell equipment
-    let sell = document.querySelector("#sell-equip");
-    sell.onclick = function () {
-        sfxOpen.play();
-        itemInfo.style.display = "none";
-        defaultModalElement.style.display = "flex";
-        defaultModalElement.innerHTML = `
+const generateItemHtml = (item, icon, type) => {
+    return `
         <div class="content">
-            <p>Sell <span class="${item.rarity}">${icon}${item.rarity} ${item.category}</span>?</p>
+            <h3 class="${item.rarity}">${icon}${item.rarity} ${item.category}</h3>
+            <h5 class="lvltier ${item.rarity}"><b>Lv.${item.lvl} Tier ${item.tier || 1}</b></h5>
+            <ul>${item.stats.map(generateStatHtml).join('')}</ul>
+            <div class="button-container">
+                <button id="un-equip">${type}</button>
+                <button id="sell-equip"><i class="fas fa-coins" style="color: #FFD700;"></i>${nFormatter(item.value)}</button>
+                <button id="close-item-info">Close</button>
+            </div>
+        </div>`;
+};
+
+const setupButtonHandlers = (item, type, i) => {
+    const itemInfo = querySelector("#equipmentInfo");
+    const dimContainer = querySelector("#inventory");
+    querySelector("#un-equip").onclick = () => handleEquipOrUnequip(item, type, i, itemInfo, dimContainer);
+    querySelector("#sell-equip").onclick = () => handleSell(item, type, i, dimContainer);
+    querySelector("#close-item-info").onclick = () => handleClose(itemInfo, dimContainer);
+};
+
+const handleEquipOrUnequip = (item, type, i, itemInfo, dimContainer) => {
+    if (type === "Equip" && player.equipped.length >= 6) {
+        playSoundEffect('deny');
+    } else {
+        playSoundEffect(type.toLowerCase());
+        const action = type === "Equip" ? { from: 'inventory.equipment', to: 'equipped' } : { from: 'equipped', to: 'inventory.equipment' };
+
+        const fromIndex = player[action.from].findIndex((_, index) => index === i);
+        if (fromIndex > -1) {
+            player[action.from].splice(fromIndex, 1);
+            player[action.to].push(item);
+        }
+        toggleDisplay("#equipmentInfo", "none");
+        updateBrightness("#inventory", "100%");
+        playerLoadStats();
+        saveData();
+        continueExploring();
+    }
+};
+
+const showItemModal = (modal, displayStyle) => {
+    modal.style.display = displayStyle;
+};
+
+const handleSellConfirmation = (itemValue, itemIndex, itemArray, modal) => {
+    playSoundEffect('sell');
+    player.gold += itemValue;
+    itemArray.splice(itemIndex, 1);
+    showItemModal(modal, "none");
+    updateBrightness("#inventory", "100%");
+    playerLoadStats();
+    saveData();
+    continueExploring();
+};
+
+const handleCancel = (modal) => {
+    playSoundEffect('decline');
+    showItemModal(modal, "none");
+    toggleDisplay("#equipmentInfo", "flex");
+    continueExploring();
+};
+
+const handleSell = ({ rarity, category, value }, type, index, dimContainer) => {
+    playSoundEffect('open');
+    toggleDisplay("#equipmentInfo", "none");
+    const modal = querySelector("#defaultModalElement");
+    showItemModal(modal, "flex");
+    modal.innerHTML = `
+        <div class="content">
+            <p>Sell <span class="${rarity}">${icon}${rarity} ${category}</span>?</p>
             <div class="button-container">
                 <button id="sell-confirm">Sell</button>
                 <button id="sell-cancel">Cancel</button>
             </div>
         </div>`;
+    const sellConfirmButton = querySelector("#sell-confirm");
+    const sellCancelButton = querySelector("#sell-cancel");
+    const fromArray = type === "Equip" ? player.inventory.equipment : player.equipped;
+    sellConfirmButton.onclick = () => handleSellConfirmation(value, index, fromArray, modal);
+    sellCancelButton.onclick = () => handleCancel(modal);
+};
 
-        let confirm = document.querySelector("#sell-confirm");
-        let cancel = document.querySelector("#sell-cancel");
-        confirm.onclick = function () {
-            sfxSell.play();
+const handleClose = (itemInfo, dimContainer) => {
+    playSoundEffect('decline');
+    toggleDisplay("#equipmentInfo", "none");
+    updateBrightness("#inventory", "100%");
+    continueExploring();
+};
 
-            // Sell the equipment
-            if (type == "Equip") {
-                player.gold += item.value;
-                player.inventory.equipment.splice(i, 1);
-            } else if (type == "Unequip") {
-                player.gold += item.value;
-                player.equipped.splice(i, 1);
-            }
+const showItemInfo = (item, icon, type, i) => {
+    playSoundEffect('open');
+    dungeon.status.exploring = false;
+    toggleDisplay("#equipmentInfo", "flex");
+    updateBrightness("#inventory", "50%");
+    const itemInfo = querySelector("#equipmentInfo");
+    itemInfo.innerHTML = generateItemHtml(item, icon, type);
+    setupButtonHandlers(item, type, i);
+};
 
-            defaultModalElement.style.display = "none";
-            defaultModalElement.innerHTML = "";
-            dimContainer.style.filter = "brightness(100%)";
-            playerLoadStats();
-            saveData();
-            continueExploring();
-        }
-        cancel.onclick = function () {
-            sfxDecline.play();
-            defaultModalElement.style.display = "none";
-            defaultModalElement.innerHTML = "";
-            itemInfo.style.display = "flex";
-            continueExploring();
-        }
-    };
-
-    // Close item info
-    let close = document.querySelector("#close-item-info");
-    close.onclick = function () {
-        sfxDecline.play();
-
-        itemInfo.style.display = "none";
-        dimContainer.style.filter = "brightness(100%)";
-        continueExploring();
-    };
-}
-
-// Show inventory
-const showInventory = () => {
-    // Clear the inventory container
-    let playerInventoryList = document.getElementById("playerInventory");
-    playerInventoryList.innerHTML = "";
-
-    if (player.inventory.equipment.length == 0) {
-        playerInventoryList.innerHTML = "There are no items available.";
-    }
-
-    for (let i = 0; i < player.inventory.equipment.length; i++) {
-        const item = JSON.parse(player.inventory.equipment[i]);
-
-        // Create an element to display the item's name
-        let itemDiv = document.createElement('div');
-        let icon = equipmentIcon(item.category);
-        itemDiv.className = "items";
+function createItemElement(item, icon, type, index) {
+    const itemDiv = document.createElement('div');
+    itemDiv.className = "items";
+    if (type === "Equip") {
         itemDiv.innerHTML = `<p class="${item.rarity}">${icon}${item.rarity} ${item.category}</p>`;
-        itemDiv.addEventListener('click', function () {
-            let type = "Equip";
-            showItemInfo(item, icon, type, i);
-        });
-
-        // Add the itemDiv to the inventory container
-        playerInventoryList.appendChild(itemDiv);
+    } else if (type === "Unequip") {
+        itemDiv.innerHTML = `<button class="${item.rarity}">${icon}</button>`;
     }
+    itemDiv.addEventListener('click', function () {
+        showItemInfo(item, icon, type, index);
+    });
+    return itemDiv;
 }
 
-// Show equipment
+function updateUIList(elementId, items, type) {
+    const listElement = document.getElementById(elementId);
+    listElement.innerHTML = "";
+    if (items.length === 0) {
+        listElement.innerHTML = type === "Equip" ? "There are no items available." : "Nothing equipped.";
+    }
+    items.forEach((item, index) => {
+        const icon = equipmentIcon(item.category);
+        const parsedItem = type === "Equip" ? JSON.parse(item) : item;
+        const itemElement = createItemElement(parsedItem, icon, type, index);
+        listElement.appendChild(itemElement);
+    });
+}
+
+const showInventory = () => {
+    updateUIList("playerInventory", player.inventory.equipment, "Equip");
+}
+
 const showEquipment = () => {
-    // Clear the inventory container
-    let playerEquipmentList = document.getElementById("playerEquipment");
-    playerEquipmentList.innerHTML = "";
-
-    // Show a message if a player has no equipment
-    if (player.equipped.length == 0) {
-        playerEquipmentList.innerHTML = "Nothing equipped.";
-    }
-
-    for (let i = 0; i < player.equipped.length; i++) {
-        const item = player.equipped[i];
-
-        // Create an element to display the item's name
-        let equipDiv = document.createElement('div');
-        let icon = equipmentIcon(item.category);
-        equipDiv.className = "items";
-        equipDiv.innerHTML = `<button class="${item.rarity}">${icon}</button>`;
-        equipDiv.addEventListener('click', function () {
-            let type = "Unequip";
-            showItemInfo(item, icon, type, i);
-        });
-
-        // Add the equipDiv to the inventory container
-        playerEquipmentList.appendChild(equipDiv);
-    }
+    updateUIList("playerEquipment", player.equipped, "Unequip");
 }
 
-// Apply the equipment stats to the player
 const applyEquipmentStats = () => {
-    // Reset the equipment stats
     player.equippedStats = {
         hp: 0,
         atk: 0,
@@ -441,11 +233,8 @@ const applyEquipmentStats = () => {
         critRate: 0,
         critDmg: 0
     };
-
     for (let i = 0; i < player.equipped.length; i++) {
         const item = player.equipped[i];
-
-        // Iterate through the stats array and update the player stats
         item.stats.forEach(stat => {
             for (const key in stat) {
                 player.equippedStats[key] += stat[key];
@@ -465,71 +254,153 @@ const unequipAll = () => {
     saveData();
 }
 
+const sellEquipment = (equipment, condition = () => true) => {
+    let soldSomething = false;
+    const remainingEquipment = [];
+    player.inventory.equipment.forEach(item => {
+        const equipmentItem = JSON.parse(item);
+        if (condition(equipmentItem)) {
+            player.gold += equipmentItem.value;
+            soldSomething = true;
+        } else {
+            remainingEquipment.push(item);
+        }
+    });
+    player.inventory.equipment = remainingEquipment;
+    return soldSomething;
+};
+
 const sellAll = (rarity) => {
-    if (rarity == "All") {
-        if (player.inventory.equipment.length !== 0) {
-            sfxSell.play();
-            for (let i = 0; i < player.inventory.equipment.length; i++) {
-                const equipment = JSON.parse(player.inventory.equipment[i]);
-                player.gold += equipment.value;
-                player.inventory.equipment.splice(i, 1);
-                i--;
-            }
-            playerLoadStats();
-            saveData();
-        } else {
-            sfxDeny.play();
-        }
+    const sellCondition = rarity === "All" 
+        ? () => true 
+        : equipment => equipment.rarity === rarity;
+    const soldSomething = sellEquipment(player.inventory.equipment, sellCondition);
+    if (soldSomething) {
+        sfxSell.play();
+        playerLoadStats();
+        saveData();
     } else {
-        let rarityCheck = false;
-        for (let i = 0; i < player.inventory.equipment.length; i++) {
-            const equipment = JSON.parse(player.inventory.equipment[i]);
-            if (equipment.rarity === rarity) {
-                rarityCheck = true;
-                break;
-            }
-        }
-        if (rarityCheck) {
-            sfxSell.play();
-            for (let i = 0; i < player.inventory.equipment.length; i++) {
-                const equipment = JSON.parse(player.inventory.equipment[i]);
-                if (equipment.rarity === rarity) {
-                    player.gold += equipment.value;
-                    player.inventory.equipment.splice(i, 1);
-                    i--;
-                }
-            }
-            playerLoadStats();
-            saveData();
-        } else {
-            sfxDeny.play();
-        }
+        sfxDeny.play();
     }
+};
+
+function formatStatName(statName) {
+    return statName.replace(/([A-Z])/g, " $1") 
+        .replace(/^./, str => str.toUpperCase()) 
+        .replace(/Crit/g, "C"); 
+}
+
+function formatStatValue(stat, statName) {
+    if (statNamesRequiringPercentage.has(statName)) {
+        return `${stat.toFixed(2).replace(regexTrailingZeros, "$1")}%`;
+    }
+    return stat;
+}
+
+function generateStatList(item) {
+    return item.stats.map(stat => {
+        const statName = Object.keys(stat)[0];
+        const formattedStatName = formatStatName(statName);
+        const formattedStatValue = formatStatValue(stat[statName], statName);
+        return `<li>${formattedStatName}: +${formattedStatValue}</li>`;
+    }).join('');
 }
 
 const createEquipmentPrint = (condition) => {
-    let rx = /\.0+$|(\.[0-9]*[1-9])0+$/;
-    let item = createEquipment();
-    let panel = `
+    const item = createEquipment();
+    const panel = `
         <div class="primary-panel" style="padding: 0.5rem; margin-top: 0.5rem;">
-                <h4 class="${item.rarity}"><b>${item.icon}${item.rarity} ${item.category}</b></h4>
-                <h5 class="${item.rarity}"><b>Lv.${item.lvl} Tier ${item.tier}</b></h5>
-                <ul>
-                ${item.stats.map(stat => {
-        if (Object.keys(stat)[0] === "critRate" || Object.keys(stat)[0] === "critDmg" || Object.keys(stat)[0] === "atkSpd" || Object.keys(stat)[0] === "vamp") {
-            return `<li>${Object.keys(stat)[0].toString().replace(/([A-Z])/g, ".$1").replace(/crit/g, "c").toUpperCase()}+${stat[Object.keys(stat)[0]].toFixed(2).replace(rx, "$1")}%</li>`;
-        }
-        else {
-            return `<li>${Object.keys(stat)[0].toString().replace(/([A-Z])/g, ".$1").replace(/crit/g, "c").toUpperCase()}+${stat[Object.keys(stat)[0]]}</li>`;
-        }
-    }).join('')}
-            </ul>
+            <h4 class="${item.rarity}"><b>${item.icon} ${item.rarity} ${item.category}</b></h4>
+            <h5 class="${item.rarity}"><b>Lv.${item.lvl} Tier ${item.tier}</b></h5>
+            <ul>${generateStatList(item)}</ul>
         </div>`;
-    if (condition == "combat") {
-        addCombatLog(`
-        ${enemy.name} dropped <span class="${item.rarity}">${item.rarity} ${item.category}</span>.<br>${panel}`);
-    } else if (condition == "dungeon") {
-        addDungeonLog(`
-        You got <span class="${item.rarity}">${item.rarity} ${item.category}</span>.<br>${panel}`);
+
+    const logMessage = condition === "combat" ? `${enemy.name} dropped` : "You got";
+    const logFunction = condition === "combat" ? addCombatLog : addDungeonLog;
+
+    logFunction(`<span class="${item.rarity}">${item.rarity} ${item.category}</span>.<br>${panel}`);
+};
+
+function generateItemShowcase(equipment) {
+    return {
+        category: equipment.category,
+        rarity: equipment.rarity,
+        lvl: equipment.lvl,
+        tier: equipment.tier,
+        icon: equipmentIcon(equipment.category),
+        stats: equipment.stats
+    };
+}
+
+function calculateAndAssignStatsValues(equipment, enemyScaling, player) {
+    let equipmentValue = 0;
+    const statTypes = getStatTypes(equipment);
+    let loopCount = getLoopCountForRarity(equipment.rarity);
+    for (let i = 0; i < loopCount; i++) {
+        const statType = statTypes[randomizeNum(0, statTypes.length - 1)];
+        const statMultiplier = (enemyScaling - 1) * equipment.lvl;
+        const base = MAX_STAT_MULTIPLIERS[statType] || MAX_STAT_MULTIPLIERS.atkDef;
+        let statValue = calculateStatScaling(base, statMultiplier, equipment.lvl);
+
+        if (STAT_CAPS[statType] && statValue > STAT_CAPS[statType]) {
+            statValue = STAT_CAPS[statType] * randomizeDecimal(0.5, 1);
+            i--;
+        } else {
+            equipmentValue += adjustValueBasedOnStatType(statType, statValue);
+            updateEquipmentStats(equipment, statType, statValue);
+        }
+    }
+    return equipmentValue;
+}
+
+function adjustValueBasedOnStatType(statType, statValue) {
+    const valueMultipliers = {
+        atk: 2.5,
+        def: 2.5,
+        atkSpd: 8.33,
+        vamp: 20.83,
+        critRate: 20.83,
+        critDmg: 8.33,
+    };
+    return statValue * (valueMultipliers[statType] || 1);
+}
+
+function adjustValueBasedOnStatType(statType, statValue) {
+    const valueMultipliers = {
+        atk: 2.5,
+        def: 2.5,
+        atkSpd: 8.33,
+        vamp: 20.83,
+        critRate: 20.83,
+        critDmg: 8.33,
+    };
+    return statValue * (valueMultipliers[statType] || 1);
+}
+
+function getLoopCountForRarity(rarity) {
+    const loopCounts = {
+        Common: 3, Uncommon: 4, Rare: 5, Epic: 6, Legendary: 7, Heirloom: 9
+    };
+    return loopCounts[rarity] || 3;
+}
+
+function calculateLevelAndScaling(dungeon) {
+    const maxLvl = Math.min(dungeon.progress.floor * dungeon.settings.enemyLvlGap + (dungeon.settings.enemyBaseLvl - 1), MAX_LEVEL);
+    const minLvl = maxLvl - (dungeon.settings.enemyLvlGap - 1);
+    const enemyScaling = Math.min(dungeon.settings.enemyScaling, 2);
+    const level = randomizeNum(minLvl, maxLvl);
+    return { level, enemyScaling };
+}
+
+function calculateStatScaling(base, scalingFactor, level) {
+    return (base * randomizeDecimal(0.5, 1.5)) + (base * randomizeDecimal(0.5, 1.5) * ((scalingFactor - 1) * level));
+}
+
+function updateEquipmentStats(equipment, statType, value) {
+    const statIndex = equipment.stats.findIndex(stat => Object.keys(stat)[0] === statType);
+    if (statIndex >= 0) {
+        equipment.stats[statIndex][statType] += value;
+    } else {
+        equipment.stats.push({ [statType]: value });
     }
 }
